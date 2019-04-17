@@ -9,7 +9,7 @@ var base58 = require('./base58.js');
 // grab the url model
 var Url = require('./models/url');
 
-mongoose.connect('mongodb://' + config.db.host + '/' + config.db.name);
+mongoose.connect('mongodb://' + config.db.host + '/' + config.db.name, { useNewUrlParser: true });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -23,6 +23,13 @@ app.get('/', function(req, res){
 app.post('/api/shorten', function(req, res){
   var longUrl = req.body.url;
   var shortUrl = '';
+
+  var re = new RegExp("^https?://", "i");
+  var match = re.test(longUrl);
+
+  if (match === false) {
+    longUrl = "http://"+longUrl;
+  }
 
   // check if url already exists in database
   Url.findOne({long_url: longUrl}, function (err, doc){
@@ -62,7 +69,7 @@ app.get('/:encoded_id', function(req, res){
   // check if url already exists in database
   Url.findOne({_id: id}, function (err, doc){
     if (doc) {
-      res.redirect(doc.long_url);
+      res.redirect(doc.long_url); 
     } else {
       res.redirect(config.webhost);
     }
