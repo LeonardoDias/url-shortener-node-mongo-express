@@ -1,19 +1,26 @@
 const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 function generateHashString(hashLength, alphabet) {
-  const alphabetLength = alphabet.length;
-  const minValue = Math.pow(alphabetLength,hashLength-1);
-  const maxValue = Math.pow(alphabetLength, hashLength);
+  const base = alphabet.length;
+  const minValue = Math.pow(base,hashLength-1);
+  const maxValue = Math.pow(base, hashLength) - 1;
   const generatedNumber = Math.floor(Math.random() * (maxValue - minValue) + minValue);
 
-  hashString = encode(generatedNumber, alphabet);
+  hashString = encodeNumber(generatedNumber, alphabet);
+
+  console.log(`alphabet: ${alphabet}`);
+  console.log(`base: ${base}`);
+  console.log(`min value: ${minValue}`);
+  console.log(`max value: ${maxValue}`);
+  console.log(`generated number: ${generatedNumber}`);
+  console.log(`hash string: ${hashString}`);
 
   return hashString;
 }
 
 function encodeNumber(number, alphabet){
   if (number === 0) {
-    return '0';
+    return alphabet['0'];
   }
 
   const alphabetLength = alphabet.length;
@@ -42,7 +49,7 @@ function decodeHashString(hashString, alphabet){
 
 module.exports = {
   do: (length) => {
-    return generateHash(length, alphabet);
+    return generateHashString(length, alphabet);
   },
   encodeNumber,
   decodeHashString,
