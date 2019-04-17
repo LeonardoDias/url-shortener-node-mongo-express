@@ -1,9 +1,9 @@
-var config = {};
-
-config.db = {};
-config.webhost = 'http://localhost:3000/';
-
-config.db.host = 'localhost';
-config.db.name = 'url_shortener';
+const config = {
+  db: {
+    host: 'localhost',
+    name: 'url_shortener'
+  },
+  webhost: 'http://192.168.3.115:3000/'
+};
 
 module.exports = config;
