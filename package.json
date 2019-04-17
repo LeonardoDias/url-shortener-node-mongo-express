@@ -9,8 +9,8 @@
   "author": "coligo.io",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.14.1",
-    "express": "^4.13.3",
-    "mongoose": "4.2.9"
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "mongoose": "^5.5.2"
   }
 }
