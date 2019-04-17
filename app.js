@@ -1,15 +1,15 @@
-var express = require('express');
-var app = express();
-var path = require('path');
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var config = require('./config');
-var base58 = require('./base58.js');
+const express = require('express');
+const app = express();
+const path = require('path');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const config = require('./config');
+const baseConverter = require('./baseConverter');
 
 // grab the url model
-var Url = require('./models/url');
+const Url = require('./models/url');
 
-mongoose.connect('mongodb://' + config.db.host + '/' + config.db.name, { useNewUrlParser: true });
+mongoose.connect('mongodb://' + config.db.host + '/' + config.db.name, { useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -21,38 +21,40 @@ app.get('/', function(req, res){
 });
 
 app.post('/api/shorten', function(req, res){
-  var longUrl = req.body.url;
-  var shortUrl = '';
+  let longUrl = req.body.url;
+  let shortUrl = '';
 
-  var re = new RegExp("^https?://", "i");
-  var match = re.test(longUrl);
+  const re = new RegExp("^https?://", "i");
+  const match = re.test(longUrl);
 
-  if (match === false) {
+  if (!match) {
     longUrl = "http://"+longUrl;
   }
 
   // check if url already exists in database
   Url.findOne({long_url: longUrl}, function (err, doc){
     if (doc){
-      shortUrl = config.webhost + base58.encode(doc._id);
+      shortUrl = config.webhost + doc.hashString;
 
       // the document exists, so we return it without creating a new entry
       res.send({'shortUrl': shortUrl});
     } else {
       // since it doesn't exist, let's go ahead and create it:
-      var newUrl = Url({
-        long_url: longUrl
+      const hashString = baseConverter.generateHashString(5, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+      const newUrl = Url({
+        long_url: longUrl,
+        hashString: hashString
       });
 
       // save the new link
       newUrl.save(function(err) {
         if (err){
           console.log(err);
+          res.send({'shortUrl': 'error'});
+        } else {
+          shortUrl = config.webhost + hashString;
+          res.send({'shortUrl': shortUrl});
         }
-
-        shortUrl = config.webhost + base58.encode(newUrl._id);
-
-        res.send({'shortUrl': shortUrl});
       });
     }
 
@@ -60,20 +62,19 @@ app.post('/api/shorten', function(req, res){
 
 });
 
-app.get('/:encoded_id', function(req, res){
+app.get('/:hashString', function(req, res){
 
-  var base58Id = req.params.encoded_id;
+  const hashString = req.params.hashString;
 
-  var id = base58.decode(base58Id);
-
-  // check if url already exists in database
-  Url.findOne({_id: id}, function (err, doc){
-    if (doc) {
-      res.redirect(doc.long_url); 
-    } else {
-      res.redirect(config.webhost);
-    }
-  });
+  if (hashString) {
+    Url.findOne({hashString}, function (err, doc){
+      if (doc) {
+        res.redirect(doc.long_url); 
+      } else {
+        res.redirect(config.webhost);
+      }
+    });
+  }
 
 });
 
