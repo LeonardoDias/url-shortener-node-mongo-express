@@ -1,18 +1,19 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// create a schema for our links
-var urlSchema = new Schema({
-  hashString: {
-    type: String,
-    index: true
-  },
-  long_url: String,
-  created_at: Date
-}, { 
-    noVirtualId: true }
-  );
+const urlSchema = new Schema(
+  {
+    hashString: {
+      type: String
+    },
+    long_url: String,
+    created_at: Date
+  }, 
+  { 
+    noVirtualId: true 
+}
+);
 
-var Url = mongoose.model('Url', urlSchema);
+var Url = mongoose.model('shortnedURLs', urlSchema);
 
 module.exports = Url;
