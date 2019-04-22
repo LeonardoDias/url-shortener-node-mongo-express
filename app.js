@@ -20,7 +20,7 @@ app.get('/', function(req, res){
   res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
-app.post('/api/shorten', function(req, res){
+app.post('/shorten', function(req, res){
   let longUrl = req.body.url;
   let shortUrl = '';
 
@@ -38,26 +38,41 @@ app.post('/api/shorten', function(req, res){
 
       // the document exists, so we return it without creating a new entry
       res.send({'shortUrl': shortUrl});
-    } else {
-      // since it doesn't exist, let's go ahead and create it:
-      const hashString = baseConverter.generateHashString(5, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-      const newUrl = Url({
-        long_url: longUrl,
-        hashString: hashString
-      });
-
-      // save the new link
-      newUrl.save(function(err) {
-        if (err){
-          console.log(err);
-          res.send({'shortUrl': 'error'});
-        } else {
-          shortUrl = config.webhost + hashString;
-          res.send({'shortUrl': shortUrl});
-        }
-      });
+      return;
     }
+  });
 
+  // since it doesn't exist, let's go ahead and create it:
+  let hashAlreadyExists;
+  let hashString = baseConverter.generateHashString(6, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  do{
+    Url.findOne({hashString}, function (err, doc){
+      if(err) {
+        console.log(err)
+        res.send(500)
+        return
+      } else if (doc) {
+        hashAlreadyExists = true
+      } else {
+        hashAlreadyExists = false
+      }
+    })
+  } while(hashAlreadyExists);
+  
+  const newUrl = Url({
+    long_url: longUrl,
+    hashString: hashString
+  });
+  
+  // save the new link
+  newUrl.save(function(err) {
+    if (err){
+      console.log(err);
+      res.send(500)
+    } else {
+      shortUrl = config.webhost + hashString;
+      res.send({'shortUrl': shortUrl});
+    }
   });
 
 });
@@ -68,16 +83,39 @@ app.get('/:hashString', function(req, res){
 
   if (hashString) {
     Url.findOne({hashString}, function (err, doc){
-      if (doc) {
-        res.redirect(doc.long_url); 
+      if (err) {
+        console.log(err)
+        res.send(500)
+      } else if(doc) {
+        res.redirect(doc.long_url)
       } else {
-        res.redirect(config.webhost);
+        res.send(404)
       }
-    });
+    })
+  }
+});
+
+app.get('/decode/:hashString', (req, res) => {
+
+  const hashString = req.params.hashString;
+
+  console.log(`request received ${JSON.stringify(req.params)}`)
+
+  if (hashString) {
+    Url.findOne({hashString}, function (err, doc){
+      if (err) {
+        console.log(err)
+        res.status(500)
+      } else if (doc) {
+        res.send(JSON.stringify(doc))
+      } else {
+        res.send(404)
+      }
+    })
   }
 
 });
 
-var server = app.listen(3000, function(){
+var server = app.listen(4000, function(){
   console.log('Server listening on port 3000');
 });
